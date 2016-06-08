@@ -1,0 +1,81 @@
+---
+title: "Reproducible Research for Individual FitBit Study"
+author: "Jason R. Battles"
+date: "June 7, 2016"
+output: html_document:
+    keep_md: true
+---
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.  
+## Loading and preprocessing the data
+```{r setup, include=FALSE}
+setwd("~/GitHub/FitBit-Analysis")
+IndActivity <- read.csv("activity.csv", stringsAsFactors = FALSE, header = TRUE)
+```
+
+Load the R packages that will be used later.
+```{r load libraries}
+library(plyr)
+library(lattice)
+```
+
+## What is mean total number of steps taken per day?
+What is mean total number of steps taken per day? Summarize the data by date and number of steps using function ddpy from plyr package. Do not remove "NA" values yet. Assign this data set to "tmp" variable. "tmp" gives you the total number of steps by date.
+
+
+```{r Daily Pattern}
+#Summarize dataframe by date, total steps
+tmp <- ddply(IndActivity,.(date), summarize, totSteps=sum(steps, na.rm=TRUE))
+# Sum of total steps, 570,608 steps.
+sum(tmp$totalSteps) 
+```
+Histogram of the total number of steps taken each day.  This is the frequency of the number of similar step observiations.
+```{r}
+hist(tmp$totSteps, breaks = 20, col = "blue", xlab = "Total Steps", main = "Total Steps Taken Each Day")
+```
+
+Average and median steps per day.
+```{r Calc Average and Median}
+# Average step is 9354.23
+mean(tmp$totalSteps, na.rm=TRUE) 
+# Median step is 10,395
+median(tmp$totalSteps, na.rm=TRUE) 
+```
+
+
+## What is the average daily activity pattern?
+
+```{r load libraries}
+library(plyr)
+library(lattice)
+```
+
+## Imputing missing values
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
