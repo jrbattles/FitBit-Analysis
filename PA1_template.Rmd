@@ -1,6 +1,7 @@
 ---
 title: "Reproducible Research for Individual FitBit Study"
 author: "Jason R. Battles"
+date: "June 7, 2016"
 output: html_document:
     keep_md: true
 ---
@@ -29,7 +30,7 @@ What is mean total number of steps taken per day? Summarize the data by date and
 #Summarize dataframe by date, total steps
 tmp <- ddply(IndActivity,.(date), summarize, totSteps=sum(steps, na.rm=TRUE))
 # Sum of total steps, 570,608 steps.
-sum(tmp$totalSteps) 
+sum(tmp$totSteps) 
 ```
 Histogram of the total number of steps taken each day.  This is the frequency of the number of similar step observiations.
 ```{r , echo=TRUE}
@@ -39,9 +40,9 @@ hist(tmp$totSteps, breaks = 20, col = "blue", xlab = "Total Steps", main = "Tota
 Average and median steps per day.
 ```{r Calc Average and Median, echo=TRUE}
 # Mean of steps = 9354.23 steps
-mean(tmp$totalSteps, na.rm=TRUE) 
+mean(tmp$totSteps, na.rm=TRUE) 
 # Median of steps = 10,395 steps
-median(tmp$totalSteps, na.rm=TRUE) 
+median(tmp$totSteps, na.rm=TRUE) 
 ```
 
 
@@ -52,7 +53,7 @@ Use the plyr package, ddply function, to get the average steps per time interval
 #Summarize date set by date, average steps/interval
 tmp2<-ddply(IndActivity,.(interval),summarise, AvgSteps=mean(steps, na.rm=TRUE)) 
 # Average number of steps to use in imputing NA values
-mean(tmp2$AverageSteps) 
+mean(tmp2$AvgSteps) 
 # Plot average steps per interval using a line as the type. 
 plot(tmp2, type = "l", col = "blue", main = "Time Series, Avg Steps per Interval", ylab = "Avg Steps", xlab = "5 Min Intervals")
 ```
