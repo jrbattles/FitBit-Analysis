@@ -1,19 +1,23 @@
 ---
 title: "Reproducible Research for Individual FitBit Study"
 author: "Jason R. Battles"
-date: "June 7, 2016"
 output: html_document:
     keep_md: true
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.  
 ## Loading and preprocessing the data
-```{r setup, include=FALSE}
+```{r setup, echo=TRUE}
 setwd("~/GitHub/FitBit-Analysis")
 IndActivity <- read.csv("activity.csv", stringsAsFactors = FALSE, header = TRUE)
 ```
 
 Load the R packages that will be used later.
-```{r load libraries}
+```{r load libraries, echo=TRUE}
 library(plyr)
 library(lattice)
 ```
@@ -21,61 +25,102 @@ library(lattice)
 ## What is mean total number of steps taken per day?
 What is mean total number of steps taken per day? Summarize the data by date and number of steps using function ddpy from plyr package. Do not remove "NA" values yet. Assign this data set to "tmp" variable. "tmp" gives you the total number of steps by date.
 
-
-```{r Daily Pattern}
+```{r Daily Pattern, echo=TRUE}
 #Summarize dataframe by date, total steps
 tmp <- ddply(IndActivity,.(date), summarize, totSteps=sum(steps, na.rm=TRUE))
 # Sum of total steps, 570,608 steps.
 sum(tmp$totalSteps) 
 ```
 Histogram of the total number of steps taken each day.  This is the frequency of the number of similar step observiations.
-```{r}
+```{r , echo=TRUE}
 hist(tmp$totSteps, breaks = 20, col = "blue", xlab = "Total Steps", main = "Total Steps Taken Each Day")
 ```
 
 Average and median steps per day.
-```{r Calc Average and Median}
-# Average step is 9354.23
+```{r Calc Average and Median, echo=TRUE}
+# Mean of steps = 9354.23 steps
 mean(tmp$totalSteps, na.rm=TRUE) 
-# Median step is 10,395
+# Median of steps = 10,395 steps
 median(tmp$totalSteps, na.rm=TRUE) 
 ```
 
 
 ## What is the average daily activity pattern?
+Use the plyr package, ddply function, to get the average steps per time interval and plot. Assign new variable, tmp2, to this data frame.
 
-```{r load libraries}
-library(plyr)
-library(lattice)
+```{r, echo=TRUE}
+#Summarize date set by date, average steps/interval
+tmp2<-ddply(IndActivity,.(interval),summarise, AvgSteps=mean(steps, na.rm=TRUE)) 
+# Average number of steps to use in imputing NA values
+mean(tmp2$AverageSteps) 
+# Plot average steps per interval using a line as the type. 
+plot(tmp2, type = "l", col = "blue", main = "Time Series, Avg Steps per Interval", ylab = "Avg Steps", xlab = "5 Min Intervals")
+```
+Which interval had the most steps? 
+```{r, echo=TRUE}
+#Time Interval #835 had the most steps of all 5 minute intervals with 206.17 steps.
+tmp2[which.max(tmp2$AvgSteps),]
 ```
 
 ## Imputing missing values
+We must imputing some missing values in order to continue with a more robust analysis. I took the average of the steps per interval and substituted the average for all NA values. Number of NA values is 2304.
 
+```{r, echo=TRUE}
+# Code shows number of "NA" values, or 2304 "NA" values.
+sum(is.na(IndActivity))
+```
+
+We now need to group the data by date and total steps. First, we calculate the average of the 5 minute interval averages. This will then be the number we use to impute the value for NA. 
+```{r, echo=TRUE}
+#Replace NA values with average of average of 5 min values. Merge original data set with tmp2, which shows average.
+newIndActivity <- merge(IndActivity, tmp2, by = "interval", sort = TRUE)
+index <- is.na(newIndActivity$steps)  #Returns logical vector, true = missing value
+#Remove rows of missing values and impute by replacing with #AverageSteps where there was NA, missing value
+newIndActivity$steps[index] <- newIndActivity$AvgSteps[index]
+#Group on date and total steps
+tmp3 <- ddply(newIndActivity, .(date), summarize, TotalSteps = (sum(steps, na.rm = TRUE)))
+```
+
+Here is a histogram of average steps per day with using imputed average for missing values.
+```{r, echo=TRUE}
+hist(tmp3$TotalSteps, breaks = 20, col = "blue", xlab = "Total Steps", main = "Total Steps Taken Each Day, Impute NA")
+```
+
+I now calculate the mean and median steps with imputed average replacing missing values. The mean and median are now both 10,766.19 steps. The average and median values using imputed numbers differ from the average and median values which included missing values.  average in place of NA differ from the average and median with NA in the data set, 9534 and 10,395 respectively.
+
+```{r, echo=TRUE}
+# Mean of steps with imputed values in place of NA values = 10766.19 steps
+mean(tmp3$TotalSteps)
+# Median of steps with imputed values in place of NA values = 10766.19 steps
+median(tmp3$TotalSteps)
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+My analysis revealed that average step counts were generally higher during the weekends but the maximum values were acheived during the weekdays.
 
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, echo=TRUE}
+# Convert dates into weekdays and weekends
+tmp4 <- transform(IndActivity, date = strptime(date, format="%Y-%m-%d"))
+#Use weekdays() function to classify day. I commented the next line to reduce the file size; it was too big for Git 
+#Hub.
+#weekdays(tmp4$date) %in% c("Saturday", "Sunday") 
+# Set logical if day is weekday or weekend. I commented the next line to reduce the file size; it was too big for #Git Hub.
+#factor(weekdays(tmp4$date) %in% c("Saturday", "Sunday"), level=c(TRUE, FALSE), labels=c("weekend", "weekday"))
+# Assign factor variable to day. I commented the next line to reduce the file size; it was too big for Git
+#Hub.
+day1<-factor(weekdays(tmp4$date) %in% c("Saturday", "Sunday"), level=c(TRUE, FALSE), labels=c("weekend", "weekday"))
+#Create new column, weekend, weekend using mutate from plyr
+tmp4<-mutate(tmp4, day=day1)
+#Plot weekend and weekday averages; change day from POSIXlt format to character format because #ddply does not work on posixlt; it only works on charactoer & number vector.
+tmp4<-transform(tmp4, day1=as.character((day1)))  
+tmp5<-ddply(tmp4,.(interval,day1), summarize, averagesteps=mean(steps, na.rm = TRUE))
+#Plot weekday and weekend average steps per interval using line graph.
+png(filename = "AverageSteps.png")
+xyplot(averagesteps~interval|day1, data = tmp5, 
+       ylab="Average Steps", 
+       type = "l",
+       main="Average Steps Comparison - Weekday vs. Weekend")
+dev.off()
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
